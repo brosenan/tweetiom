@@ -1,0 +1,19 @@
+version: '2'
+services:
+  rabbitmq:
+    image: rabbitmq
+    ports:
+    - "5672:5672"
+
+  dynamodb:
+    image: deangiberson/aws-dynamodb-local
+    ports:
+    - "8006:8000"
+
+  zookeeper:
+      image: zookeeper
+      restart: always
+      ports:
+      - "2181:2181"
+
+    
