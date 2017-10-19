@@ -8,9 +8,14 @@
 (enable-console-print!)
 ;; 'host' is the object connecting this app to the host.
 
+(defn some-func [a b c]
+  (let [x (r/atom 0)]
+    (fn [a b c]
+      [:span {:on-click #(swap! x inc)} a b c @x])))
+
 (defn app []
   (let [host (ax/default-connection r/atom)]
-    [:div]))
+    [some-func 1 2 3]))
 
 (let [elem (js/document.getElementById "app")]
   (when elem

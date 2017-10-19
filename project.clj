@@ -19,7 +19,7 @@
   :profiles {:uberjar {:aot :all}
              :dev {:dependencies [[midje "1.8.3"]
                                   [axiom-clj/cloudlog-events "0.4.1"]
-                                  [brosenan/reagent-query "0.2.1"]]}}
+                                  [brosenan/reagent-query "0.2.2"]]}}
 
   :cljsbuild {
               :test-commands {"test" ["lein" "doo" "phantom" "test" "once"]}

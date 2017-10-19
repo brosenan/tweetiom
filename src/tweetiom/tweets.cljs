@@ -32,10 +32,12 @@
   [:span {:class "tweet-text"}
    text])
 
+(defn tweet-link [author ts link-content])
+
 (defmethod tweet-display :reply [[_ [user ts] reply]]
   [:div
    [:span {:class "tweet-details"}
-    "In reply to " [users/user-link user]]
+    "In reply to " [tweet-link user ts "this tweet"] " by " [users/user-link user]]
    [:span {:class "tweet-text"}
     reply]])
 

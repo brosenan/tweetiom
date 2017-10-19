@@ -54,6 +54,14 @@
     (is (= (rq/find ui :.tweet-action-pane-container) [[tweets/action-pane host "bob" 1234]]))))
 
 
+;;;;;; Action Pane ;;;;;;;;;
+;; The action pane is a toolbar containing buttons that perform tweet-related operations: Reply, retweet, like and share (link).
+;; If the user viewing the tweet is also its author, there is also a delete button.
+;; The action pane also contains a :div that is filled with contents based on the selected action.
+;; For example, if we retweet or reply, the :div is filled with an input box and confirmation/cancelation buttons.
+;; If we share, the :div is filled with an input box containing the link and a dismiss button,
+;; delete operations open a confirmation dialog, and "like" does not open anything and just "likes".
+
 ;;;;;; Tweet Display ;;;;;;;;;
 ;; tweet-display is a multimethod that allows different kinds of tweets to be rendered differently.
 
@@ -67,4 +75,4 @@
 (deftest tweet-display-reply
   (let [ui (tweets/tweet-display [:reply ["bob" 1234] "bar foo"])]
     (is (= (rq/find ui :span.tweet-text) ["bar foo"]))
-    (is (= (rq/find ui :span.tweet-details) ["In reply to " [users/user-link "bob"]]))))
+    (is (= (rq/find ui :span.tweet-details) ["In reply to " [tweets/tweet-link "bob" 1234 "this tweet"] " by " [users/user-link "bob"]]))))
