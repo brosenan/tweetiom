@@ -12,3 +12,8 @@
            content])]
        [:div {:class "action-pane-dialog"}
          @dialog]])))
+
+(defn dialog-button [func]
+  (fn [dialog]
+    (let [close #(reset! dialog nil)]
+      (reset! dialog (func close)))))
