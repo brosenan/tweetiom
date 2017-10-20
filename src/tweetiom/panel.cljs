@@ -17,3 +17,18 @@
   (fn [dialog]
     (let [close #(reset! dialog nil)]
       (reset! dialog (func close)))))
+
+(defn input-box [func btn-caption]
+  (let [content (r/atom "")]
+    (dialog-button (fn [close]
+                     [:div
+                      [:input {:value @content
+                               :on-change #(reset! content (.-target.value %))}]
+                      [:button {:class "btn btn-primary"
+                                :on-click (fn []
+                                            (func @content)
+                                            (close))}
+                       btn-caption]
+                      [:button {:class "btn btn-secondary"
+                                :on-click close}
+                       "Cancel"]]))))
