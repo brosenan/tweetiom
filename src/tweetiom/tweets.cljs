@@ -64,3 +64,9 @@
     reply]])
 
 
+(defmethod tweet-display :retweet [[_ [user ts] orig comment]]
+  [:div
+   [:span {:class "tweet-details"}
+    [users/user-link user] [tweet-link user ts "retweeted:"]]
+   [:div {:class "retweet-original"}
+    (tweet-display orig)]])

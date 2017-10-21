@@ -146,3 +146,9 @@
   (let [ui (tweets/tweet-display [:reply ["bob" 1234] "bar foo"])]
     (is (= (rq/find ui :span.tweet-text) ["bar foo"]))
     (is (= (rq/find ui :span.tweet-details) ["In reply to " [tweets/tweet-link "bob" 1234 "this tweet"] " by " [users/user-link "bob"]]))))
+
+;; A :retweet with an empty comment display "<user name> retweeted:" in a :div, and the original tweet.
+(deftest tweet-display-retweet-1
+  (let [ui (tweets/tweet-display [:retweet ["bob" 1234] [:text "foo bar"] ""])]
+    (is (= (rq/find ui :.retweet-original :span.tweet-text) ["foo bar"]))
+    (is (= (rq/find ui :span.tweet-details) [[users/user-link "bob"] [tweets/tweet-link "bob" 1234 "retweeted:"]]))))
