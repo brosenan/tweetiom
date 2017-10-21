@@ -2,6 +2,8 @@
   (:require [cljs.test :refer-macros [is testing deftest]]
             [tweetiom.tweets :as tweets]
             [tweetiom.users :as users]
+            [tweetiom.panel :as panel]
+            [tweetiom.like :as like]
             [reagent-query.core :as rq]
             [axiom-cljs.core :as ax]))
 
@@ -51,7 +53,7 @@
                                       :ts 1234
                                       :tweet [:some-tweet-type 1 2 3]})]
     (is (= (rq/find ui :.tweet-container) [[tweets/tweet-display [:some-tweet-type 1 2 3]]]))
-    (is (= (rq/find ui :.tweet-action-pane-container) [[tweets/action-pane host "bob" 1234]]))))
+    (is (= (rq/find ui :.tweet-action-pane-container) [[tweets/action-pane host "bob" 1234 [:some-tweet-type 1 2 3]]]))))
 
 
 ;;;;;; Action Pane ;;;;;;;;;
@@ -61,6 +63,54 @@
 ;; For example, if we retweet or reply, the :div is filled with an input box and confirmation/cancelation buttons.
 ;; If we share, the :div is filled with an input box containing the link and a dismiss button,
 ;; delete operations open a confirmation dialog, and "like" does not open anything and just "likes".
+(deftest action-pane-1
+  (let [host (-> (ax/mock-connection "alice")
+                 (assoc :time (constantly 5555)))
+        ui-func (tweets/action-pane host "bob" 1234 [:text "foo bar"])
+        ui (ui-func host "bob" 1234)
+        [config] (rq/query ui {:elem panel/action-pane})
+        [foo bar] ui]
+    (is (seq? config))
+    (let [[[reply-btn reply-func]
+           [retweet-btn retweet-func]
+           [like-btn like-func]
+           [share-btn share-func]] config
+          dialog (atom nil)]
+      ;; Reply
+      (reply-func dialog)
+      ;; When we write a reply and post it, a new reply tweet is created.
+      (let [[on-change] (rq/find @dialog :input:on-change)
+            [ok] (rq/find @dialog :button.btn-primary:on-click)]
+        (on-change (rq/mock-change-event "some reply"))
+        (ok))
+      ;; Now the reply should appear in the tweet-view
+      (let [[{:keys [tweet ts del!]}] (tweets/tweet-view host "alice")]
+        (is (= tweet [:reply ["bob" 1234] "some reply"]))
+        (is (= ts 5555))
+        (del!)) ;; Cleanup
+
+      ;; Retweet
+      (retweet-func dialog)
+      ;; A dialog opens, we write a comment and press OK
+      (let [[on-change] (rq/find @dialog :input:on-change)
+            [ok] (rq/find @dialog :button.btn-primary:on-click)]
+        (on-change (rq/mock-change-event "some comment"))
+        (ok))
+      ;; Now the retweet should appear in the tweet-view
+      (let [[{:keys [tweet ts del!]}] (tweets/tweet-view host "alice")]
+        (is (= tweet [:retweet ["bob" 1234] [:text "foo bar"] "some comment"]))
+        (is (= ts 5555))
+        (del!))
+
+      ;; Like
+      (like-func dialog)
+      ;; The like button does not open a dialog.
+      ;; It just creates a like in the like-view.
+      (is (= (count (like/like-view host "bob" 1234 "alice")) 1))
+      ;; If the button is clicked again, the like is removed.
+      (like-func dialog)
+      (is (= (count (like/like-view host "bob" 1234 "alice")) 0))
+      )))
 
 ;;;;;; Tweet Display ;;;;;;;;;
 ;; tweet-display is a multimethod that allows different kinds of tweets to be rendered differently.

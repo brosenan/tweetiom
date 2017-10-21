@@ -1,7 +1,9 @@
 (ns tweetiom.tweets
   (:require [reagent.core :as r]
             [axiom-cljs.core :as ax]
-            [tweetiom.users :as users])
+            [tweetiom.users :as users]
+            [tweetiom.like :as like]
+            [tweetiom.panel :as panel])
   (:require-macros [axiom-cljs.macros :refer [defview defquery user]]))
 
 (defview tweet-view [user]
@@ -19,14 +21,30 @@
 
 (defmulti tweet-display first)
 
-(defn action-pane [host author ts])
+(defn action-pane [host author ts tweet]
+  (fn [host author ts]
+    (let [tweets (tweet-view host (user host))
+          {:keys [add]} (meta tweets)]
+      [panel/action-pane (list
+                          [[:div "Reply"] (panel/input-box #(add {:tweet [:reply [author ts] %]
+                                                                  :ts ((:time host))}) "Reply")]
+                          [[:div "Retweet"] (panel/input-box #(add {:tweet [:retweet [author ts] tweet %]
+                                                                    :ts ((:time host))}) "Retweet")]
+                          [[:div "Like"] (fn []
+                                           (let [likes (like/like-view host author ts (user host))
+                                                 {:keys [add]} (meta likes)]
+                                             (cond (empty? likes)
+                                                   (add {})
+                                                   :else
+                                                   (let [{:keys [del!]} (first likes)]
+                                                     (del!)))))])])))
 
 (defn tweet-viewer [host {:keys [tweet author ts]}]
   [:div
    [:div {:class "tweet-container"}
     [tweet-display tweet]]
    [:div {:class "tweet-action-pane-container"}
-    [action-pane host author ts]]])
+    [action-pane host author ts tweet]]])
 
 (defmethod tweet-display :text [[_ text]]
   [:span {:class "tweet-text"}

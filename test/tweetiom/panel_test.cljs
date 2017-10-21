@@ -92,7 +92,7 @@
            []))))
 
 ;; The Cancel button closes the dialog without invoking the callback
-(deftest input-box-1
+(deftest input-box-2
   (let [result (atom nil)
         config [["Display Input Box" (panel/input-box #(reset! result %) "Go for It!")]]
         panel-func (panel/action-pane config)]
@@ -107,3 +107,4 @@
     ;; The dialog is closed
     (is (= (rq/find (panel-func config) :.action-pane-dialog :div :button.btn.btn-primary)
            []))))
+
