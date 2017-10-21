@@ -49,32 +49,32 @@
 ;; tweet-viewer returns a UI container containing the tweet's content, and tweet-action-pane displaying actions related to this tweet.
 (deftest tweet-viewer-1
   (let [host (ax/mock-connection "alice")
-        ui (tweets/tweet-viewer host {:author "bob"
-                                      :ts 1234
-                                      :tweet [:some-tweet-type 1 2 3]})]
+        record {:author "bob"
+                :ts 1234
+                :tweet [:some-tweet-type 1 2 3]}
+        ui (tweets/tweet-viewer host record)]
     (is (= (rq/find ui :.tweet-container) [[tweets/tweet-display [:some-tweet-type 1 2 3]]]))
-    (is (= (rq/find ui :.tweet-action-pane-container) [[tweets/action-pane host "bob" 1234 [:some-tweet-type 1 2 3]]]))))
+    (is (= (rq/find ui :.tweet-action-pane-container) [[tweets/action-pane host record]]))))
 
 
 ;;;;;; Action Pane ;;;;;;;;;
-;; The action pane is a toolbar containing buttons that perform tweet-related operations: Reply, retweet, like and share (link).
-;; If the user viewing the tweet is also its author, there is also a delete button.
+;; The action pane is a toolbar containing buttons that perform tweet-related operations: Reply, retweet and like.
 ;; The action pane also contains a :div that is filled with contents based on the selected action.
 ;; For example, if we retweet or reply, the :div is filled with an input box and confirmation/cancelation buttons.
-;; If we share, the :div is filled with an input box containing the link and a dismiss button,
-;; delete operations open a confirmation dialog, and "like" does not open anything and just "likes".
 (deftest action-pane-1
   (let [host (-> (ax/mock-connection "alice")
                  (assoc :time (constantly 5555)))
-        ui-func (tweets/action-pane host "bob" 1234 [:text "foo bar"])
-        ui (ui-func host "bob" 1234)
-        [config] (rq/query ui {:elem panel/action-pane})
-        [foo bar] ui]
+        record {:author "bob"
+                :ts 1234
+                :tweet [:text "foo bar"]}
+        ui-func (tweets/action-pane host record)
+        ui (ui-func host record)
+        [config] (rq/query ui {:elem panel/action-pane})]
     (is (seq? config))
+    (is (= (count config) 3))
     (let [[[reply-btn reply-func]
            [retweet-btn retweet-func]
-           [like-btn like-func]
-           [share-btn share-func]] config
+           [like-btn like-func]] config
           dialog (atom nil)]
       ;; Reply
       (reply-func dialog)
@@ -109,8 +109,28 @@
       (is (= (count (like/like-view host "bob" 1234 "alice")) 1))
       ;; If the button is clicked again, the like is removed.
       (like-func dialog)
-      (is (= (count (like/like-view host "bob" 1234 "alice")) 0))
-      )))
+      (is (= (count (like/like-view host "bob" 1234 "alice")) 0)))))
+
+;; If the user viewing the tweet is also its author, there is also a delete button, that deletes a tweet.
+(deftest action-pane-2
+  (let [host (-> (ax/mock-connection "alice")
+                 (assoc :time (constantly 5555)))
+        deleted (atom false)
+        record {:author "alice"
+                :ts 1234
+                :tweet [:text "hi there"]
+                :del! #(reset! deleted true)}
+        ui-func (tweets/action-pane host record)
+        ui (ui-func host record)
+        [config] (rq/query ui {:elem panel/action-pane})]
+    (is (= (count config) 4))
+    (let [[delete-btn delete-func] (last config)
+          dialog (atom nil)]
+      ;; Let's hit the delete button...
+      (delete-func dialog)
+      ;; It should call the record's del! method
+      (is @deleted))))
+
 
 ;;;;;; Tweet Display ;;;;;;;;;
 ;; tweet-display is a multimethod that allows different kinds of tweets to be rendered differently.

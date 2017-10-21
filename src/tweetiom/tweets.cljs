@@ -21,30 +21,34 @@
 
 (defmulti tweet-display first)
 
-(defn action-pane [host author ts tweet]
-  (fn [host author ts]
-    (let [tweets (tweet-view host (user host))
-          {:keys [add]} (meta tweets)]
-      [panel/action-pane (list
-                          [[:div "Reply"] (panel/input-box #(add {:tweet [:reply [author ts] %]
-                                                                  :ts ((:time host))}) "Reply")]
-                          [[:div "Retweet"] (panel/input-box #(add {:tweet [:retweet [author ts] tweet %]
-                                                                    :ts ((:time host))}) "Retweet")]
-                          [[:div "Like"] (fn []
-                                           (let [likes (like/like-view host author ts (user host))
-                                                 {:keys [add]} (meta likes)]
-                                             (cond (empty? likes)
-                                                   (add {})
-                                                   :else
-                                                   (let [{:keys [del!]} (first likes)]
-                                                     (del!)))))])])))
+(defn action-pane [host record]
+  (fn [host record]
+    (let [{:keys [author ts tweet del!]} record
+          tweets (tweet-view host (user host))
+          {:keys [add]} (meta tweets)
+          config [[[:div "Reply"] (panel/input-box #(add {:tweet [:reply [author ts] %]
+                                                          :ts ((:time host))}) "Reply")]
+                  [[:div "Retweet"] (panel/input-box #(add {:tweet [:retweet [author ts] tweet %]
+                                                            :ts ((:time host))}) "Retweet")]
+                  [[:div "Like"] (fn []
+                                   (let [likes (like/like-view host author ts (user host))
+                                         {:keys [add]} (meta likes)]
+                                     (cond (empty? likes)
+                                           (add {})
+                                           :else
+                                           (let [{:keys [del!]} (first likes)]
+                                             (del!)))))]]
+          config (cond (= author (user host))
+                       (conj config [[:div "Delete"] del!])
+                       :else config)]
+      [panel/action-pane (seq config)])))
 
-(defn tweet-viewer [host {:keys [tweet author ts]}]
+(defn tweet-viewer [host {:keys [tweet author ts] :as record}]
   [:div
    [:div {:class "tweet-container"}
     [tweet-display tweet]]
    [:div {:class "tweet-action-pane-container"}
-    [action-pane host author ts tweet]]])
+    [action-pane host record]]])
 
 (defmethod tweet-display :text [[_ text]]
   [:span {:class "tweet-text"}
