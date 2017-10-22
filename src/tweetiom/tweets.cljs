@@ -45,28 +45,28 @@
 
 (defn tweet-viewer [host {:keys [tweet author ts] :as record}]
   [:div
-   [:div {:class "tweet-container"}
+   [:div.tweet-container
     [tweet-display tweet]]
-   [:div {:class "tweet-action-pane-container"}
+   [:div.tweet-action-pane-container
     [action-pane host record]]])
 
 (defmethod tweet-display :text [[_ text]]
-  [:span {:class "tweet-text"}
+  [:span.tweet-text
    text])
 
 (defn tweet-link [author ts link-content])
 
 (defmethod tweet-display :reply [[_ [user ts] reply]]
   [:div
-   [:span {:class "tweet-details"}
+   [:span.tweet-details
     "In reply to " [tweet-link user ts "this tweet"] " by " [users/user-link user]]
-   [:span {:class "tweet-text"}
+   [:span.tweet-text
     reply]])
 
 
 (defmethod tweet-display :retweet [[_ [user ts] orig comment]]
   [:div
-   [:span {:class "tweet-details"}
+   [:span.tweet-details
     [users/user-link user] [tweet-link user ts "retweeted:"]]
-   [:div {:class "retweet-original"}
+   [:div.retweet-original
     (tweet-display orig)]])
