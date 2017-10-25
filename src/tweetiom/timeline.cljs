@@ -57,5 +57,8 @@
    [tweets/tweet-editor host]
    [timeline host]])
 
+(defmethod route/render-page :default [_ host]
+  (route/render-page [:timeline] host))
+
 (defroute "/timeline" []
   (route/navigate :timeline))

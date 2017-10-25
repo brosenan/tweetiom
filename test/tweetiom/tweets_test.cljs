@@ -38,7 +38,9 @@
         ;; The tweet itself is the term [:tweet T], where T is the tweet's text
         (is (= (map :tweet tweets) [[:tweet "the-tweet-to-submit"]]))
         ;; The tweet's :ts field is a timestamp
-        (is (= (map :ts tweets) [12345]))))))
+        (is (= (map :ts tweets) [12345])))
+      ;; It clears the field
+      (is (= (rq/find (ui host) :input:value) [""])))))
 
 ;;;;;; Tweet Viewer ;;;;;;;;;
 
