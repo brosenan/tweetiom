@@ -1,18 +1,34 @@
 (ns tweetiom.core-test
   (:require [midje.sweet :refer :all]
             [tweetiom.core :refer :all]
+            [tweetiom.time :as time]
             [cloudlog-events.testing :refer [scenario as emit query apply-rules]]))
 
+;;;;;;;;;;;; Time Quantization ;;;;;;;;;;;;;;;
+;; In order to support pagination and not retrieve all tweets at once,
+;; we index tweets by user and the time they were introduced.
+;; The timed-tweet rule performs this indexing, calculating for each tweet a time-slot,
+;; which is its timestamp divided by the time-quant -- an amount of time used for this indexing.
+;; Tweets retreived by timed-tweets are limited to one time-slot.
 (fact
- ;; This test is written in the cloudlog testing DSL.
- ;; See http://axiom-clj.org/cloudlog-events.testing.html for more details.
  (scenario
   (as "alice"
-      (emit [:tweetiom/task "alice" "Create app" 1000])
-      (emit [:tweetiom/task "alice" "Show app to @bob" 2000])
-      (query [:tweetiom/my-tasks "alice"]) => #{["alice" "Create app" 1000]
-                                              ["alice" "Show app to @bob" 2000]})
-  (apply-rules [:tweetiom.core/task-where-user-is-mentioned "bob"])
-  => #{["alice" "Show app to @bob" 2000]}
-  (as "bob"
-      (query [:tweetiom/my-tasks "bob"]) => #{["alice" "Show app to @bob" 2000]})))
+      (emit [:tweetiom/tweet "alice" [:text "no-show"] (+ (* time/quant 2) 7)])
+      (emit [:tweetiom/tweet "alice" [:text "hello"] (+ (* time/quant 3) 2)])
+      (emit [:tweetiom/tweet "alice" [:text "world"] (+ (* time/quant 3) 5)])
+      (emit [:tweetiom/tweet "alice" [:text "something-else"] (+ (* time/quant 4) 0)])
+      (emit [:tweetiom/tweet "alice" [:text "no-show"] (+ (* time/quant 5) 0)]))
+  (apply-rules [:tweetiom.time/timed-tweet ["alice" 3]])
+  => #{[[:text "hello"] (+ (* time/quant 3) 2)]
+       [[:text "world"] (+ (* time/quant 3) 5)]}
+  ;; Timeline queries return all tweets by the same user, based on the given time-slot range
+  (as "alice"
+      (query [:tweetiom/timeline "alice" 3 5]) ;; 3 to 5 exclusive
+      => #{["alice" [:text "hello"] (+ (* time/quant 3) 2)]
+           ["alice" [:text "world"] (+ (* time/quant 3) 5)]
+           ["alice" [:text "something-else"] (+ (* time/quant 4) 0)]}
+      ;; The same query will return no results if the range is too big (> 20)
+      (query [:tweetiom/timeline "alice" 3 24])
+      => map?)))
+
+
