@@ -19,12 +19,12 @@
 
 (def page (r/atom []))
 
-(secretary/set-config! :prefix "#")
+(comment (secretary/set-config! :prefix "#"))
 
 (defn navigate [& args]
   (reset! page args))
 
-(defmulti current-page first)
+(defmulti render-page first)
 
 (defn route [ctx]
-  (current-page @page ctx))
+  (render-page @page ctx))

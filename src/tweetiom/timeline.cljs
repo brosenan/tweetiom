@@ -1,8 +1,10 @@
 (ns tweetiom.timeline
   (:require [axiom-cljs.core :as ax]
             [reagent.core :as r]
-            [tweetiom.tweets :as tweets])
-  (:require-macros [axiom-cljs.macros :refer [defview defquery user]]))
+            [tweetiom.tweets :as tweets]
+            [tweetiom.routing :as route])
+  (:require-macros [axiom-cljs.macros :refer [defview defquery user]]
+                   [secretary.core :refer [defroute]]))
 
 
 (defn floor [x]
@@ -42,10 +44,18 @@
   :store-in (r/atom nil)
   :order-by (- ts))
 
-(defn timeline [host u]
+(defn timeline [host]
   [time-range-display {:wrap (fn [content]
                                [:div.timeline
                                 content])
-                       :query (partial timeline-query host u)
+                       :query (partial timeline-query host (user host))
                        :render (fn [{:keys [author ts] :as r}]
                                  ^{:key [author ts]} [tweets/tweet-viewer host r])}])
+
+(defmethod route/render-page :timeline [[_tl] host]
+  [:div
+   [tweets/tweet-editor host]
+   [timeline host]])
+
+(defroute "/timeline" []
+  (route/navigate :timeline))

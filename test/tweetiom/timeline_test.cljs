@@ -2,8 +2,10 @@
   (:require [cljs.test :refer-macros [is testing deftest]]
             [tweetiom.timeline :as tl]
             [tweetiom.tweets :as tweets]
+            [tweetiom.routing :as route]
             [reagent-query.core :as rq]
-            [axiom-cljs.core :as ax]))
+            [axiom-cljs.core :as ax]
+            [secretary.core :as secretary]))
 
 ;;;;;; Time Range Display ;;;;;;;;;
 ;; time-range-display is a component that displays elements based on a time-based query, in descending order, from the newest to the oldest.
@@ -45,10 +47,10 @@
       (is (= (rq/find ui :li) expected)))))
 
 ;;;;;; Timeline ;;;;;;;;;
-;; The timeline function displays a time-range-display, displaying timeline items for the given user, based on the timeline-query.
+;; The timeline function displays a time-range-display, displaying timeline items for the logged-in user, based on the timeline-query.
 (deftest timeline-1
   (let [host (ax/mock-connection "alice")
-        ui (tl/timeline host "alice")
+        ui (tl/timeline host)
         tl-mock (ax/query-mock host :tweetiom/timeline)]
     ;; The UI is a time-range-display with attributes.
     ;; Its :wrap attribute builds a :div of class .timeline
@@ -69,3 +71,21 @@
         ;; Each element is annotated with a :key which is a tuple [:author :ts]
         (let [rendered (render {:tweet :foo :author "bob" :ts 1234})]
           (is (= (-> rendered meta :key) ["bob" 1234])))))))
+
+;;;;;; Timeline Page ;;;;;;;;;
+;; We define the timeline page by providing a :timeline method to the render-page multimethod.
+;; The timeline takes no parameters.
+;; It displays a tweet editor and a timeline.
+(deftest timeline-page-1
+  (let [host {:is-host true}
+        ui (route/render-page [:timeline] host)]
+    ;; Tweet editor
+    (is (= (rq/find ui {:elem tweets/tweet-editor :attr :is-host}) [true]))
+    ;; Timeline
+    (is (= (rq/find ui {:elem tl/timeline :attr :is-host}) [true]))))
+
+;; The page is routed to /timeline
+(deftest timeline-page-2
+  (reset! route/page nil)
+  (secretary/dispatch! "/timeline")
+  (is (= @route/page [:timeline])))

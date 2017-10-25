@@ -7,7 +7,8 @@
   (:require-macros [axiom-cljs.macros :refer [defview defquery user]]))
 
 (defview tweet-view [user]
-  [:tweetiom/tweet user tweet ts])
+  [:tweetiom/tweet user tweet ts]
+  :store-in (r/atom nil))
 
 (defn tweet-editor [host]
   (let [{:keys [add]} (meta (tweet-view host (user host)))
