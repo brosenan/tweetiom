@@ -1,8 +1,14 @@
 (ns tweetiom.core
   (:refer-clojure :exclude [uuid?])
   (:require [reagent.core :as r]
-            [axiom-cljs.core :as ax])
-  (:require-macros [axiom-cljs.macros :refer [defview defquery user]]))
+            [axiom-cljs.core :as ax]
+            [secretary.core :as secretary]
+            [goog.events :as events]
+            [goog.history.EventType :as EventType]
+            [reagent.core :as reagent])
+  (:require-macros [axiom-cljs.macros :refer [defview defquery user]]
+                   [secretary.core :refer [defroute]])
+  (:import goog.History))
 
 ;; Remove this before going to production...
 (enable-console-print!)
