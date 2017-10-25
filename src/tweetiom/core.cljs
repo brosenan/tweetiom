@@ -11,11 +11,12 @@
 (defn some-func [a b c]
   (let [x (r/atom 0)]
     (fn [a b c]
-      [:span {:on-click #(swap! x inc)} a b c @x])))
+      [:ul (doall (for [i (range c)]
+                    [:li {:key i} i a b c @x
+                     [:button {:on-click #(swap! x inc)} "+"]]))])))
 
 (defn app []
-  (let [host (ax/default-connection r/atom)]
-    [some-func 1 2 3]))
+  [some-func 1 2 3])
 
 (let [elem (js/document.getElementById "app")]
   (when elem
