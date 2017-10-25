@@ -29,7 +29,8 @@
                      (for [elem (query from to)]
                        (do
                          (render elem)))))
-            (concat [[:button.get-older {:on-click #(let [[from' to'] (last @ranges)
+            (concat [[:button.get-older {:key :get-older-btn
+                                         :on-click #(let [[from' to'] (last @ranges)
                                                            to from'
                                                            from (- from' range-increment)]
                                                        (swap! ranges conj [from to]))}
@@ -38,11 +39,13 @@
 
 (defquery timeline-query [user t-from t-to]
   [:tweetiom/timeline user t-from t-to -> author tweet ts]
-  :store-in (r/atom nil))
+  :store-in (r/atom nil)
+  :order-by (- ts))
 
 (defn timeline [host u]
   [time-range-display {:wrap (fn [content]
                                [:div.timeline
                                 content])
                        :query (partial timeline-query host u)
-                       :render (comp tweets/tweet-display :tweet)}])
+                       :render (fn [{:keys [author ts] :as r}]
+                                 ^{:key [author ts]} [tweets/tweet-viewer host r])}])

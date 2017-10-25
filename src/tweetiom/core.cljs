@@ -8,12 +8,16 @@
 (enable-console-print!)
 ;; 'host' is the object connecting this app to the host.
 
-(defn some-func [a b c]
-  (let [x (r/atom 0)]
+(defn some-other-func [a i]
+  [:input {:value (get @a i)
+           :on-change #(swap! a assoc i (.-target.value %))}])
+
+(defn some-func []
+  (let [x (r/atom [])]
     (fn [a b c]
       [:ul (doall (for [i (range c)]
-                    [:li {:key i} i a b c @x
-                     [:button {:on-click #(swap! x inc)} "+"]]))])))
+                    ^{:key i} [some-other-func x i]))
+       [:div {:key "something special"} (pr-str @x)]])))
 
 (defn app []
   [some-func 1 2 3])

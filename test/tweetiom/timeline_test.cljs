@@ -1,6 +1,7 @@
 (ns tweetiom.timeline-test
   (:require [cljs.test :refer-macros [is testing deftest]]
             [tweetiom.timeline :as tl]
+            [tweetiom.tweets :as tweets]
             [reagent-query.core :as rq]
             [axiom-cljs.core :as ax]))
 
@@ -34,6 +35,8 @@
         ;; We want seven days ending today (inclusive)
         expected (reverse (range (- today 6) (inc today)))]
     (is (= (rq/query ui :ul.my-list :li) expected))
+    ;; The "Get older" button is a member of the list, and has a :key attribute
+    (is (= (rq/query ui :ul.my-list :button.get-older:key) [:get-older-btn]))
     ;; If we click the "Get older" button, we should see 3 more elements in the range
     (let [[get-older] (rq/query ui :ul.my-list :button.get-older:on-click)]
       (get-older))
@@ -57,8 +60,12 @@
       (is (= (query 200 300) []))
       (tl-mock ["alice" 200 300] ["bob" [:text "hello"] 1000])
       (tl-mock ["alice" 200 300] ["charlie" [:text "world"] 2000])
-      ;; The :render function renders calls tweets/tweet-display to display query results
+      ;; The :render function renders calls tweets/tweet-viewer to display query results
       (let [[render] (rq/find ui {:elem tl/time-range-display :attr :render})
             items (query 200 300)
-            ui' (map render items)]
-        (is (= (rq/find ui' :.tweet-text) ["hello" "world"]))))))
+            ui' (map render items)
+            tweets (rq/find ui' {:elem tweets/tweet-viewer})]
+        (is (= (map :tweet tweets) [[:text "world"] [:text "hello"]])) ;; Tweets are displayed in descending time order
+        ;; Each element is annotated with a :key which is a tuple [:author :ts]
+        (let [rendered (render {:tweet :foo :author "bob" :ts 1234})]
+          (is (= (-> rendered meta :key) ["bob" 1234])))))))
