@@ -21,6 +21,9 @@
     ;; The content of each button...
     (is (= (rq/find (panel-func config) :.action-pane-toolbar :.action-pane-button)
            ["Btn1" "Btn2"]))
+    ;; Each with a unique ID
+    (is (= (rq/find (panel-func config) :.action-pane-toolbar :.action-pane-button:key)
+           [0 1]))
     ;; Let's click Btn1
     (let [[btn1 btn2] (rq/find (panel-func config) :.action-pane-toolbar :.action-pane-button:on-click)]
       (btn1)
@@ -63,48 +66,93 @@
       (btn))
     (is (= (rq/find (panel-func config) :.action-pane-dialog) [nil]))))
 
+;;;;;; input-box-dlg ;;;;;;;;;
+;; An input-box-dlg is a control that contains an :input box, a primary (OK) button and a secondary (Cancel) button.
+;; It takes the following parameters:
+;; - func: A function to be called when the primary button is clicked. It takes the value of the :input box as parameter.
+;; - btn-caption: The caption for the primary button
+;; - close: A function that closes the dialog.
+;; The input-box-dlg function returns a function that renders the UI.
+(deftest input-box-dlg-1
+  (let [result (atom nil)
+        closed (atom 0)
+        func #(reset! result %)
+        caption "Do it!"
+        close #(swap! closed inc)
+        ui-func (panel/input-box-dlg func caption close)
+        ui #(ui-func func caption close)]
+    ;; The UI contains an :input box with empty text
+    (is (= (rq/find (ui) :input:value) [""]))
+    ;; Editing the :input box persists
+    (let [[on-change] (rq/find (ui) :input:on-change)]
+      (on-change (rq/mock-change-event "some text")))
+    (is (= (rq/find (ui) :input:value) ["some text"]))
+    ;; The primary :button displays the given caption
+    (is (= (rq/find (ui) :button.btn.btn-primary) ["Do it!"]))
+    ;; Clicking it will call func with the string we placed in the :input box
+    (let [[ok] (rq/find (ui) :button.btn.btn-primary:on-click)]
+      (ok))
+    (is (= @result "some text"))
+    ;; ... and calls close
+    (is (= @closed 1))
+    ;; The secondary button has the caption Cancel
+    (is (= (rq/find (ui) :button.btn.btn-secondary) ["Cancel"]))
+    ;; Clicking it calls close.
+    (let [[cancel] (rq/find (ui) :button.btn.btn-secondary:on-click)]
+      (cancel))
+    (is (= @closed 2))))
+
 ;;;;;; input-box ;;;;;;;;;
-;; input-box is a function that specializes dialog-button by creating an input-box as the dialog.
+;; input-box is a function that specializes dialog-button by creating an input-box-dlg as the dialog.
 ;; It takes as parameter a callback function to be called when a value is provided, and a caption for the OK button.
-;; And when required, creates an input box with an :input, an OK :button and a Cancel :button.
+;; And when required, creates an input-box-dlg.
 (deftest input-box-1
   (let [result (atom nil)
-        config [["Display Input Box" (panel/input-box #(reset! result %) "Go for It!")]]
+        config [["Display Input Box" (panel/input-box :some-func "Go for It!")]]
         panel-func (panel/action-pane config)]
     ;; Now, when we click the button...
     (let [[btn] (rq/find (panel-func config) :.action-pane-button:on-click)]
       (btn))
     ;; ... we should an input box in the .action-pane-dialog
-    (is (= (rq/find (panel-func config) :.action-pane-dialog :div :input:value)
-           [""]))
-    (is (= (rq/find (panel-func config) :.action-pane-dialog :div :button.btn.btn-primary)
-           ["Go for It!"]))
-    (is (= (rq/find (panel-func config) :.action-pane-dialog :div :button.btn.btn-secondary)
-           ["Cancel"]))
-    ;; If we edit the :input box and click the .btn-primary, the callback is called
-    (let [[on-change] (rq/find (panel-func config) :.action-pane-dialog :div :input:on-change)
-          [ok] (rq/find (panel-func config) :button.btn.btn-primary:on-click)]
-      (on-change (rq/mock-change-event "some text"))
-      (ok))
-    (is (= @result "some text"))
-    ;; The button should close the dialog
-    (is (= (rq/find (panel-func config) :.action-pane-dialog :div :button.btn.btn-primary)
-           []))))
+    (let [[func caption close] (rq/find (panel-func config) :.action-pane-dialog {:elem panel/input-box-dlg})]
+      ;; func is the function we provided
+      (is (= func :some-func))
+      ;; and caption is the caption we provided
+      (is (= caption "Go for It!"))
+      ;; close is a function that closes the dialog
+      (close)
+      (is (= (rq/find (panel-func config) :.action-pane-dialog {:elem panel/input-box-dlg}) []))
+      )
+    (comment (is (= 
+                  []))
+             (is (= (rq/find (panel-func config) :.action-pane-dialog :div :button.btn.btn-primary)
+                    ["Go for It!"]))
+             (is (= (rq/find (panel-func config) :.action-pane-dialog :div :button.btn.btn-secondary)
+                    ["Cancel"]))
+             ;; If we edit the :input box and click the .btn-primary, the callback is called
+             (let [[on-change] (rq/find (panel-func config) :.action-pane-dialog :div :input:on-change)
+                   [ok] (rq/find (panel-func config) :button.btn.btn-primary:on-click)]
+               (on-change (rq/mock-change-event "some text"))
+               (ok))
+             (is (= @result "some text"))
+             ;; The button should close the dialog
+             (is (= (rq/find (panel-func config) :.action-pane-dialog :div :button.btn.btn-primary)
+                    [])))))
 
-;; The Cancel button closes the dialog without invoking the callback
-(deftest input-box-2
-  (let [result (atom nil)
-        config [["Display Input Box" (panel/input-box #(reset! result %) "Go for It!")]]
-        panel-func (panel/action-pane config)]
-    (let [[btn] (rq/find (panel-func config) :.action-pane-button:on-click)]
-      (btn))
-    (let [[on-change] (rq/find (panel-func config) :.action-pane-dialog :div :input:on-change)
-          [cancel] (rq/find (panel-func config) :button.btn.btn-secondary:on-click)]
-      (on-change (rq/mock-change-event "some text"))
-      (cancel))
-    ;; The result is unchanged
-    (is (= @result nil))
-    ;; The dialog is closed
-    (is (= (rq/find (panel-func config) :.action-pane-dialog :div :button.btn.btn-primary)
-           []))))
+(comment ;; The Cancel button closes the dialog without invoking the callback
+  (deftest input-box-2
+    (let [result (atom nil)
+          config [["Display Input Box" (panel/input-box #(reset! result %) "Go for It!")]]
+          panel-func (panel/action-pane config)]
+      (let [[btn] (rq/find (panel-func config) :.action-pane-button:on-click)]
+        (btn))
+      (let [[on-change] (rq/find (panel-func config) :.action-pane-dialog :div :input:on-change)
+            [cancel] (rq/find (panel-func config) :button.btn.btn-secondary:on-click)]
+        (on-change (rq/mock-change-event "some text"))
+        (cancel))
+      ;; The result is unchanged
+      (is (= @result nil))
+      ;; The dialog is closed
+      (is (= (rq/find (panel-func config) :.action-pane-dialog :div :button.btn.btn-primary)
+             [])))))
 

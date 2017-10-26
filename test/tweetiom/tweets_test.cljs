@@ -36,7 +36,7 @@
       (on-click)
       (let [tweets (tweets/tweet-view host "alice")]
         ;; The tweet itself is the term [:tweet T], where T is the tweet's text
-        (is (= (map :tweet tweets) [[:tweet "the-tweet-to-submit"]]))
+        (is (= (map :tweet tweets) [[:text "the-tweet-to-submit"]]))
         ;; The tweet's :ts field is a timestamp
         (is (= (map :ts tweets) [12345])))
       ;; It clears the field
@@ -81,10 +81,9 @@
       ;; Reply
       (reply-func dialog)
       ;; When we write a reply and post it, a new reply tweet is created.
-      (let [[on-change] (rq/find @dialog :input:on-change)
-            [ok] (rq/find @dialog :button.btn-primary:on-click)]
-        (on-change (rq/mock-change-event "some reply"))
-        (ok))
+      (let [[func caption close] (rq/find @dialog {:elem panel/input-box-dlg})]
+        (is (= caption "Reply"))
+        (func "some reply"))
       ;; Now the reply should appear in the tweet-view
       (let [[{:keys [tweet ts del!]}] (tweets/tweet-view host "alice")]
         (is (= tweet [:reply ["bob" 1234] "some reply"]))
@@ -94,10 +93,8 @@
       ;; Retweet
       (retweet-func dialog)
       ;; A dialog opens, we write a comment and press OK
-      (let [[on-change] (rq/find @dialog :input:on-change)
-            [ok] (rq/find @dialog :button.btn-primary:on-click)]
-        (on-change (rq/mock-change-event "some comment"))
-        (ok))
+      (let [[func caption close] (rq/find @dialog {:elem panel/input-box-dlg})]
+        (func "some comment"))
       ;; Now the retweet should appear in the tweet-view
       (let [[{:keys [tweet ts del!]}] (tweets/tweet-view host "alice")]
         (is (= tweet [:retweet ["bob" 1234] [:text "foo bar"] "some comment"]))

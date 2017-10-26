@@ -6,8 +6,9 @@
     (fn [tuples]
       [:div {:class "action-pane"}
        [:div {:class "action-pane-toolbar"}
-        (for [[content func] tuples]
+        (for [[i [content func]] (map-indexed vector tuples)]
           [:div {:class "action-pane-button"
+                 :key i
                  :on-click #(func dialog)}
            content])]
        [:div {:class "action-pane-dialog"}
@@ -18,17 +19,18 @@
     (let [close #(reset! dialog nil)]
       (reset! dialog (func close)))))
 
+(defn input-box-dlg [func btn-caption close]
+  (let [content (r/atom "")]
+    (fn []
+      [:div.input-box
+       [:input {:value @content
+                :on-change #(reset! content (.-target.value %))}]
+       [:button.btn.btn-primary {:on-click #(do
+                                              (func @content)
+                                              (close))} btn-caption]
+       [:button.btn.btn-secondary {:on-click close} "Cancel"]])))
+
 (defn input-box [func btn-caption]
   (let [content (r/atom "")]
     (dialog-button (fn [close]
-                     [:div
-                      [:input {:value @content
-                               :on-change #(reset! content (.-target.value %))}]
-                      [:button {:class "btn btn-primary"
-                                :on-click (fn []
-                                            (func @content)
-                                            (close))}
-                       btn-caption]
-                      [:button {:class "btn btn-secondary"
-                                :on-click close}
-                       "Cancel"]]))))
+                     [input-box-dlg func btn-caption close]))))
