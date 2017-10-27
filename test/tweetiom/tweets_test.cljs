@@ -148,7 +148,15 @@
 (deftest tweet-display-retweet-1
   (let [ui (tweets/tweet-display [:retweet ["bob" 1234] [:text "foo bar"] ""])]
     (is (= (rq/find ui :.retweet-original :span.tweet-text) ["foo bar"]))
-    (is (= (rq/find ui :span.tweet-details) [[users/user-link "bob"] [tweets/tweet-link "bob" 1234 "retweeted:"]]))))
+    (is (= (rq/find ui :span.tweet-details) [[users/user-link "bob"] [tweets/tweet-link "bob" 1234 "retweeted:"]]))
+    ;; The empty comment is not displayed
+    (is (= (rq/find ui :span.comment) []))))
+
+;; If the retweet has a non-empty comment, this comment is displayed, in addition to the original tweet
+(deftest tweet-display-retweet-2
+  (let [ui (tweets/tweet-display [:retweet ["bob" 1234] [:text "foo bar"] "tar"])]
+    (is (= (rq/find ui :span.comment) ["tar"]))
+    (is (= (rq/find ui :.retweet-original :span.tweet-text) ["foo bar"]))))
 
 ;;;;;; delete-btn ;;;;;;;;;
 ;; delete-btn is a component function that takes an author name and a timestamp,

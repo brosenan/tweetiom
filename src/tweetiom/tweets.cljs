@@ -80,6 +80,9 @@
   [:div
    [:span.tweet-details
     [users/user-link user] [tweet-link user ts "retweeted:"]]
+   (when-not (empty? comment)
+     [:span.comment
+      comment])
    [:div.retweet-original
     (tweet-display orig)]])
 
