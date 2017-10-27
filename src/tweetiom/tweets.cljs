@@ -3,7 +3,8 @@
             [axiom-cljs.core :as ax]
             [tweetiom.users :as users]
             [tweetiom.like :as like]
-            [tweetiom.panel :as panel])
+            [tweetiom.panel :as panel]
+            [secretary.core :as secretary :refer-macros [defroute]])
   (:require-macros [axiom-cljs.macros :refer [defview defquery user]]))
 
 (defview tweet-view [user]
@@ -63,25 +64,29 @@
     [action-pane host record]]])
 
 (defmethod tweet-display :text [[_ text]]
-  [:span.tweet-text
+  [:div.tweet-text
    text])
 
-(defn tweet-link [author ts link-content])
+(defroute tweet-route "/tweet/:author/:ts" [author ts])
+
+(defn tweet-link [author ts link-content]
+  [:a {:href (str "#" (tweet-route {:author author
+                                    :ts ts}))} link-content])
 
 (defmethod tweet-display :reply [[_ [user ts] reply]]
   [:div
-   [:span.tweet-details
+   [:div.tweet-details
     "In reply to " [tweet-link user ts "this tweet"] " by " [users/user-link user]]
-   [:span.tweet-text
+   [:div.tweet-text
     reply]])
 
 
 (defmethod tweet-display :retweet [[_ [user ts] orig comment]]
   [:div
-   [:span.tweet-details
-    [users/user-link user] [tweet-link user ts "retweeted:"]]
+   [:div.tweet-details
+    [users/user-link user] " " [tweet-link user ts "retweeted:"]]
    (when-not (empty? comment)
-     [:span.comment
+     [:div.comment
       comment])
    [:div.retweet-original
     (tweet-display orig)]])

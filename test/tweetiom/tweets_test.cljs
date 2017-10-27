@@ -132,31 +132,31 @@
 ;;;;;; Tweet Display ;;;;;;;;;
 ;; tweet-display is a multimethod that allows different kinds of tweets to be rendered differently.
 
-;; A :text tweet is displayed as a :span with the class .tweet-text
+;; A :text tweet is displayed as a :div with the class .tweet-text
 (deftest tweet-display-text
   (let [ui (tweets/tweet-display [:text "foo bar"])]
-    (is (= (rq/find ui :span.tweet-text) ["foo bar"]))))
+    (is (= (rq/find ui :div.tweet-text) ["foo bar"]))))
 
-;; A :reply tweet is rendered with a :span similar to a :text tweet,
-;; but in addition has a .tweet-details :span with the text "in reply to..." with the name of the user to which we reply
+;; A :reply tweet is rendered with a :div similar to a :text tweet,
+;; but in addition has a .tweet-details :div with the text "in reply to..." with the name of the user to which we reply
 (deftest tweet-display-reply
   (let [ui (tweets/tweet-display [:reply ["bob" 1234] "bar foo"])]
-    (is (= (rq/find ui :span.tweet-text) ["bar foo"]))
-    (is (= (rq/find ui :span.tweet-details) ["In reply to " [tweets/tweet-link "bob" 1234 "this tweet"] " by " [users/user-link "bob"]]))))
+    (is (= (rq/find ui :div.tweet-text) ["bar foo"]))
+    (is (= (rq/find ui :div.tweet-details) ["In reply to " [tweets/tweet-link "bob" 1234 "this tweet"] " by " [users/user-link "bob"]]))))
 
 ;; A :retweet with an empty comment display "<user name> retweeted:" in a :div, and the original tweet.
 (deftest tweet-display-retweet-1
   (let [ui (tweets/tweet-display [:retweet ["bob" 1234] [:text "foo bar"] ""])]
-    (is (= (rq/find ui :.retweet-original :span.tweet-text) ["foo bar"]))
-    (is (= (rq/find ui :span.tweet-details) [[users/user-link "bob"] [tweets/tweet-link "bob" 1234 "retweeted:"]]))
+    (is (= (rq/find ui :.retweet-original :div.tweet-text) ["foo bar"]))
+    (is (= (rq/find ui :div.tweet-details) [[users/user-link "bob"] " " [tweets/tweet-link "bob" 1234 "retweeted:"]]))
     ;; The empty comment is not displayed
-    (is (= (rq/find ui :span.comment) []))))
+    (is (= (rq/find ui :div.comment) []))))
 
 ;; If the retweet has a non-empty comment, this comment is displayed, in addition to the original tweet
 (deftest tweet-display-retweet-2
   (let [ui (tweets/tweet-display [:retweet ["bob" 1234] [:text "foo bar"] "tar"])]
-    (is (= (rq/find ui :span.comment) ["tar"]))
-    (is (= (rq/find ui :.retweet-original :span.tweet-text) ["foo bar"]))))
+    (is (= (rq/find ui :div.comment) ["tar"]))
+    (is (= (rq/find ui :.retweet-original :div.tweet-text) ["foo bar"]))))
 
 ;;;;;; delete-btn ;;;;;;;;;
 ;; delete-btn is a component function that takes an author name and a timestamp,
@@ -174,3 +174,11 @@
       (del)
       (is (= (count (tweets/tweet-del-view host "alice" 1234)) 0)))))
 
+;;;;;; Tweet Link ;;;;;;;;;
+;; A tweet link presents a link to a tweet, with the given text
+(deftest tweet-link-1
+  (let [ui (tweets/tweet-link "alice" 1234 "this tweet")]
+    ;; The caption is the one given as parameter
+    (is (= (rq/find ui :a) ["this tweet"]))
+    ;; The link is to a page corresponding with the given tweet
+    (is (= (rq/find ui :a:href) ["#/tweet/alice/1234"]))))
