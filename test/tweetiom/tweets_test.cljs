@@ -117,18 +117,16 @@
         deleted (atom false)
         record {:author "alice"
                 :ts 1234
-                :tweet [:text "hi there"]
-                :del! #(reset! deleted true)}
+                :tweet [:text "hi there"]}
         ui-func (tweets/action-pane host record)
         ui (ui-func host record)
         [config] (rq/query ui {:elem panel/action-pane})]
     (is (= (count config) 4))
-    (let [[delete-btn delete-func] (last config)
-          dialog (atom nil)]
-      ;; Let's hit the delete button...
-      (delete-func dialog)
-      ;; It should call the record's del! method
-      (is @deleted))))
+    (let [[delete-btn delete-func] (last config)]
+      ;; delete-func is a function that does nothing
+      (delete-func)
+      ;; The delete-btn is a tweets/delete-btn component
+      (is (= delete-btn [tweets/delete-btn host "alice" 1234])))))
 
 
 ;;;;;; Tweet Display ;;;;;;;;;
@@ -151,3 +149,20 @@
   (let [ui (tweets/tweet-display [:retweet ["bob" 1234] [:text "foo bar"] ""])]
     (is (= (rq/find ui :.retweet-original :span.tweet-text) ["foo bar"]))
     (is (= (rq/find ui :span.tweet-details) [[users/user-link "bob"] [tweets/tweet-link "bob" 1234 "retweeted:"]]))))
+
+;;;;;; delete-btn ;;;;;;;;;
+;; delete-btn is a component function that takes an author name and a timestamp,
+;; and assuming a tweet matching these details exists, displays a button.
+(deftest delete-btn-1
+  (let [host (ax/mock-connection "alice")
+        deletes (tweets/tweet-del-view host "alice" 1234)
+        {:keys [add]} (meta deletes)]
+    ;; Create one tweet to delete
+    (add {})
+    ;; Now we should see a delete button.
+    (let [ui (tweets/delete-btn host "alice" 1234)
+          [del] (rq/find ui :button.delete-tweet:on-click)]
+      ;; Clicking it removes the tweet
+      (del)
+      (is (= (count (tweets/tweet-del-view host "alice" 1234)) 0)))))
+

@@ -24,9 +24,18 @@
 
 (defmulti tweet-display first)
 
+(defview tweet-del-view [author ts]
+  [:tweetiom/tweet author tweet ts]
+  :store-in (r/atom nil))
+
+(defn delete-btn [host author ts]
+  (let [[{:keys [del!]}] (tweet-del-view host author ts)]
+    (when-not (nil? del!)
+      [:button.delete-tweet {:on-click del!} "Delete"])))
+
 (defn action-pane [host record]
   (fn [host record]
-    (let [{:keys [author ts tweet del!]} record
+    (let [{:keys [author ts tweet]} record
           tweets (tweet-view host (user host))
           {:keys [add]} (meta tweets)
           config [[[:div "Reply"] (panel/input-box #(add {:tweet [:reply [author ts] %]
@@ -42,7 +51,7 @@
                                            (let [{:keys [del!]} (first likes)]
                                              (del!)))))]]
           config (cond (= author (user host))
-                       (conj config [[:div "Delete"] del!])
+                       (conj config [[delete-btn host author ts] (fn [])])
                        :else config)]
       [panel/action-pane (seq config)])))
 
@@ -73,3 +82,7 @@
     [users/user-link user] [tweet-link user ts "retweeted:"]]
    [:div.retweet-original
     (tweet-display orig)]])
+
+
+
+
