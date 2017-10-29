@@ -4,6 +4,7 @@
             [tweetiom.users :as users]
             [tweetiom.panel :as panel]
             [tweetiom.like :as like]
+            [tweetiom.routing :as route]
             [reagent-query.core :as rq]
             [axiom-cljs.core :as ax]))
 
@@ -182,3 +183,31 @@
     (is (= (rq/find ui :a) ["this tweet"]))
     ;; The link is to a page corresponding with the given tweet
     (is (= (rq/find ui :a:href) ["#/tweet/alice/1234"]))))
+
+;;;;;; Tweet Page ;;;;;;;;;
+;; The tweet page shows one tweet and all its replies.
+;; It is invoked when @page gets a value of [:tweet user ts], where user and ts uniquely identify a tweet.
+(deftest tweet-page-1
+  (is (= (route/render-page [:tweet "bob" 1234] :host) [tweets/tweet-page :host "bob" 1234])))
+
+;; The tweet page consists of one tweet viewer for the tweet itself, and its replies.
+(deftest tweet-page-1
+  (let [host (ax/mock-connection "alice")
+        tweets (tweets/single-tweet-view host "bob" 1234)
+        {:keys [add]} (meta tweets)
+        reply-mock (ax/query-mock host :tweetiom/tweet-replies)]
+    ;; Create the tweet
+    (add {:tweet [:text "foo bar"]})
+    ;; The .main-tweet now has our tweet
+    (let [ui (tweets/tweet-page host "bob" 1234)
+          [rec] (rq/find ui :.main-tweet {:elem tweets/tweet-viewer})]
+      (is (= (:tweet rec) [:text "foo bar"])))
+    ;; Let's create two replies
+    (reply-mock ["bob" 1234] ["alice" [:text "foo"] 3000])
+    (reply-mock ["bob" 1234] ["charlie" [:text "bar"] 4000])
+    ;; We should see tweet-viewers for both tweets, in descending time order
+    (let [ui (tweets/tweet-page host "bob" 1234)
+          [rec1 rec2] (rq/find ui :.replies {:elem tweets/tweet-viewer})]
+      (is (= (:tweet rec1) [:text "bar"]))
+      (is (= (:tweet rec2) [:text "foo"])))
+    ))

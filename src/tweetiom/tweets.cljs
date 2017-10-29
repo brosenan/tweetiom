@@ -4,6 +4,7 @@
             [tweetiom.users :as users]
             [tweetiom.like :as like]
             [tweetiom.panel :as panel]
+            [tweetiom.routing :as route]
             [secretary.core :as secretary :refer-macros [defroute]])
   (:require-macros [axiom-cljs.macros :refer [defview defquery user]]))
 
@@ -67,7 +68,8 @@
   [:div.tweet-text
    text])
 
-(defroute tweet-route "/tweet/:author/:ts" [author ts])
+(defroute tweet-route "/tweet/:author/:ts" [author ts]
+  (route/navigate [:tweet author ts]))
 
 (defn tweet-link [author ts link-content]
   [:a {:href (str "#" (tweet-route {:author author
@@ -91,6 +93,24 @@
    [:div.retweet-original
     (tweet-display orig)]])
 
+(defview single-tweet-view [author ts]
+  [:tweetiom/tweet author tweet ts]
+  :store-in (r/atom nil))
 
+(defquery reply-query [orig-author orig-ts]
+  [:tweetiom/tweet-replies orig-author orig-ts -> author tweet ts]
+  :store-in (r/atom nil)
+  :order-by (- ts))
 
+(defn tweet-page [host author ts]
+  (let [[record] (single-tweet-view host author ts)
+        replies (reply-query host author ts)]
+    [:div
+     [:div.main-tweet
+      [tweet-viewer host record]]
+     [:div.replies
+      (for [rec replies]
+        [tweet-viewer host rec])]]))
 
+(defmethod route/render-page :tweet [[_ author ts] host]
+  [tweet-page host author ts])
