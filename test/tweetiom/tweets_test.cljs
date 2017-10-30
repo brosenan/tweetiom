@@ -193,11 +193,11 @@
 ;; The tweet page consists of one tweet viewer for the tweet itself, and its replies.
 (deftest tweet-page-1
   (let [host (ax/mock-connection "alice")
-        tweets (tweets/single-tweet-view host "bob" 1234)
-        {:keys [add]} (meta tweets)
+        single-tweet-mock (ax/query-mock host :tweetiom/single-tweet)
         reply-mock (ax/query-mock host :tweetiom/tweet-replies)]
     ;; Create the tweet
-    (add {:tweet [:text "foo bar"]})
+    (is (= (tweets/single-tweet-query host "bob" 1234) []))
+    (single-tweet-mock ["bob" 1234] [[:text "foo bar"]])
     ;; The .main-tweet now has our tweet
     (let [ui (tweets/tweet-page host "bob" 1234)
           [rec] (rq/find ui :.main-tweet {:elem tweets/tweet-viewer})]
@@ -209,5 +209,4 @@
     (let [ui (tweets/tweet-page host "bob" 1234)
           [rec1 rec2] (rq/find ui :.replies {:elem tweets/tweet-viewer})]
       (is (= (:tweet rec1) [:text "bar"]))
-      (is (= (:tweet rec2) [:text "foo"])))
-    ))
+      (is (= (:tweet rec2) [:text "foo"])))))

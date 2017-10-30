@@ -4,7 +4,7 @@
             [tweetiom.time :as time]
             [cloudlog-events.testing :refer [scenario as emit query apply-rules]]))
 
-;;;;;;;;;;;; Time Quantization ;;;;;;;;;;;;;;;
+;;;;;;;;;;;; Time Quantization and Self Tweets ;;;;;;;;;;;;;;;
 ;; In order to support pagination and not retrieve all tweets at once,
 ;; we index tweets by user and the time they were introduced.
 ;; The timed-tweet rule performs this indexing, calculating for each tweet a time-slot,
@@ -18,7 +18,7 @@
       (emit [:tweetiom/tweet "alice" [:text "world"] (+ (* time/quant 3) 5)])
       (emit [:tweetiom/tweet "alice" [:text "something-else"] (+ (* time/quant 4) 0)])
       (emit [:tweetiom/tweet "alice" [:text "no-show"] (+ (* time/quant 5) 0)]))
-  (apply-rules [:tweetiom.time/timed-tweet ["alice" 3]])
+  (apply-rules [::time/timed-tweet ["alice" 3]])
   => #{[[:text "hello"] (+ (* time/quant 3) 2)]
        [[:text "world"] (+ (* time/quant 3) 5)]}
   ;; Timeline queries return all tweets by the same user, based on the given time-slot range
@@ -31,4 +31,10 @@
       (query [:tweetiom/timeline "alice" 3 24])
       => map?)))
 
-
+;;;;;;;;;;;; Fetching a Single Tweet ;;;;;;;;;;;;;;;
+(fact
+ (scenario
+  (as "bob"
+      (emit [:tweetiom/tweet "bob" [:text "foo"] 12345]))
+  (as "alice"
+      (query [:tweetiom/single-tweet "bob" 12345]) => #{[[:text "foo"]]})))

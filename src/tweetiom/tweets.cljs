@@ -69,7 +69,7 @@
    text])
 
 (defroute tweet-route "/tweet/:author/:ts" [author ts]
-  (route/navigate [:tweet author ts]))
+  (route/navigate :tweet author (js/parseInt ts)))
 
 (defn tweet-link [author ts link-content]
   [:a {:href (str "#" (tweet-route {:author author
@@ -93,8 +93,8 @@
    [:div.retweet-original
     (tweet-display orig)]])
 
-(defview single-tweet-view [author ts]
-  [:tweetiom/tweet author tweet ts]
+(defquery single-tweet-query [author ts]
+  [:tweetiom/single-tweet author ts -> tweet]
   :store-in (r/atom nil))
 
 (defquery reply-query [orig-author orig-ts]
@@ -103,11 +103,12 @@
   :order-by (- ts))
 
 (defn tweet-page [host author ts]
-  (let [[record] (single-tweet-view host author ts)
+  (let [[record] (single-tweet-query host author ts)
         replies (reply-query host author ts)]
     [:div
      [:div.main-tweet
-      [tweet-viewer host record]]
+      (when record
+        [tweet-viewer host record])]
      [:div.replies
       (for [rec replies]
         [tweet-viewer host rec])]]))

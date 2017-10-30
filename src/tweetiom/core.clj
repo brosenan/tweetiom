@@ -8,5 +8,9 @@
    [:tweetiom/timeline user t-from t-to -> user tweet ts]
    (when-not (> (- t-to t-from) 20))
    (for [time-slot (range t-from t-to)])
-   [time/timed-tweet [user time-slot] tweet ts]))
+   [time/timed-tweet [user time-slot] tweet ts])
+
+ (clg/defclause single-tweet
+   [:tweetiom/single-tweet user ts -> tweet]
+   [:tweetiom/tweet user tweet ts] (clg/by user)))
 
