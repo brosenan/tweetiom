@@ -62,3 +62,6 @@
 
 (defroute "/timeline" []
   (route/navigate :timeline))
+
+(defroute "/" []
+  (route/navigate :timeline))

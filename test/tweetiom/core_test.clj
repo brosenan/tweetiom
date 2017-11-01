@@ -2,6 +2,7 @@
   (:require [midje.sweet :refer :all]
             [tweetiom.core :refer :all]
             [tweetiom.time :as time]
+            [tweetiom.replies :as replies]
             [cloudlog-events.testing :refer [scenario as emit query apply-rules]]))
 
 ;;;;;;;;;;;; Time Quantization and Self Tweets ;;;;;;;;;;;;;;;
@@ -38,3 +39,15 @@
       (emit [:tweetiom/tweet "bob" [:text "foo"] 12345]))
   (as "alice"
       (query [:tweetiom/single-tweet "bob" 12345]) => #{[[:text "foo"]]})))
+
+;;;;;;;;;;;; Fetching the Replies for a Tweet ;;;;;;;;;;;;;;;
+(fact
+ (scenario
+  (as "bob"
+      (emit [:tweetiom/tweet "bob" [:text "foo"] 12345]))
+  (as "charlie"
+      (emit [:tweetiom/tweet "charlie" [:reply ["bob" 12345] "bar"] 23456]))
+  (apply-rules [::replies/tweet-replies ["bob" 12345]])
+  => #{["charlie" [:text "bar"] 23456]}
+  (as "alice"
+      (query [:tweetiom/replies "bob" 12345]) => #{["charlie" [:text "bar"] 23456]})))

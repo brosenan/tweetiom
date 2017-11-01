@@ -1,6 +1,7 @@
 (ns tweetiom.core
   (:require [permacode.core :as perm]
             [tweetiom.time :as time]
+            [tweetiom.replies :as replies]
             [perm.QmNYKXgUt64cvXau5aNFqvTrjyU8hEKdnhkvtcUphacJaf :as clg]))
 
 (perm/pure
@@ -12,5 +13,9 @@
 
  (clg/defclause single-tweet
    [:tweetiom/single-tweet user ts -> tweet]
-   [:tweetiom/tweet user tweet ts] (clg/by user)))
+   [:tweetiom/tweet user tweet ts] (clg/by user))
+
+ (clg/defclause tweet-replies
+   [:tweetiom/replies orig-author orig-ts -> author tweet ts]
+   [replies/tweet-replies [orig-author orig-ts] author tweet ts]))
 

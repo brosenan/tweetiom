@@ -194,7 +194,7 @@
 (deftest tweet-page-1
   (let [host (ax/mock-connection "alice")
         single-tweet-mock (ax/query-mock host :tweetiom/single-tweet)
-        reply-mock (ax/query-mock host :tweetiom/tweet-replies)]
+        reply-mock (ax/query-mock host :tweetiom/replies)]
     ;; Create the tweet
     (is (= (tweets/single-tweet-query host "bob" 1234) []))
     (single-tweet-mock ["bob" 1234] [[:text "foo bar"]])

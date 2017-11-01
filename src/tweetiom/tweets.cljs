@@ -98,7 +98,7 @@
   :store-in (r/atom nil))
 
 (defquery reply-query [orig-author orig-ts]
-  [:tweetiom/tweet-replies orig-author orig-ts -> author tweet ts]
+  [:tweetiom/replies orig-author orig-ts -> author tweet ts]
   :store-in (r/atom nil)
   :order-by (- ts))
 
@@ -111,7 +111,7 @@
         [tweet-viewer host record])]
      [:div.replies
       (for [rec replies]
-        [tweet-viewer host rec])]]))
+        ^{:key [(:author rec) (:ts rec)]} [tweet-viewer host rec])]]))
 
 (defmethod route/render-page :tweet [[_ author ts] host]
   [tweet-page host author ts])
