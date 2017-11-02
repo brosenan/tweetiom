@@ -17,5 +17,9 @@
 
  (clg/defclause tweet-replies
    [:tweetiom/replies orig-author orig-ts -> author tweet ts]
-   [replies/tweet-replies [orig-author orig-ts] author tweet ts]))
+   [replies/tweet-replies [orig-author orig-ts] author tweet ts])
+
+ (clg/defclause user-tweets
+   [:tweetiom/user-tweets user -> tweet ts]
+   [:tweetiom/tweet user tweet ts] (clg/by user)))
 

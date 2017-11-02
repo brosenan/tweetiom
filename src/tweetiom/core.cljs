@@ -7,7 +7,8 @@
             [goog.history.EventType :as EventType]
             [reagent.core :as reagent]
             [tweetiom.routing :as route]
-            [tweetiom.timeline])
+            [tweetiom.timeline]
+            [tweetiom.user-page])
   (:require-macros [axiom-cljs.macros :refer [defview defquery user]]
                    [secretary.core :refer [defroute]])
   (:import goog.History))

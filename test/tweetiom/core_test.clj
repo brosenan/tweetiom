@@ -51,3 +51,15 @@
   => #{["charlie" [:text "bar"] 23456]}
   (as "alice"
       (query [:tweetiom/replies "bob" 12345]) => #{["charlie" [:text "bar"] 23456]})))
+
+;;;;;;;;;;;; Tweets made by a User ;;;;;;;;;;;;;;;
+(fact
+ (scenario
+  (as "bob"
+      (emit [:tweetiom/tweet "bob" [:text "foo"] 12345])
+      (emit [:tweetiom/tweet "bob" [:text "bar"] 23456])
+      (emit [:tweetiom/tweet "bob" [:text "baz"] 34567]))
+  (as "alice"
+      (query [:tweetiom/user-tweets "bob"]) => #{[[:text "foo"] 12345]
+                                                 [[:text "bar"] 23456]
+                                                 [[:text "baz"] 34567]})))
